@@ -1,33 +1,36 @@
-// src/index.js
 import express from "express";
+import crypto from "crypto";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
 app.use(express.json());
 
-// 🔹 Webhook verification (Meta handshake)
-app.get("/webhook", (req, res) => {
-  const VERIFY_TOKEN = "123456"; // same token you put in Meta
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "default_token"; // fallback if not set
 
+// Webhook verification (GET)
+app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    console.log("✅ WEBHOOK_VERIFIED");
+    console.log("✅ Webhook verified successfully!");
     res.status(200).send(challenge);
   } else {
+    console.error("❌ Verification failed. Invalid token.");
     res.sendStatus(403);
   }
 });
 
-// 🔹 Handle incoming webhook events
+// Webhook events (POST)
 app.post("/webhook", (req, res) => {
-  console.log("📩 Incoming webhook event:", JSON.stringify(req.body, null, 2));
-  res.sendStatus(200);
+  try {
+    const body = req.body;
+    console.log("📩 Incoming webhook event:", JSON.stringify(body, null, 2));
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("⚠️ Error processing webhook:", err);
+    res.sendStatus(500);
+  }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Meta webhook server running on port ${PORT}`);
-});
+app.listen(3000, () => console.log("🚀 Webhook server running on port 3000"));
