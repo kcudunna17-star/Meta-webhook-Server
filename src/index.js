@@ -33,4 +33,6 @@ app.post("/webhook", (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("🚀 Webhook server running on port 3000"));
+// ✅ FIX: Use Render’s dynamic port
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Webhook server running on port ${PORT}`));
