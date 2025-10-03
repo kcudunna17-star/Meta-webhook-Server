@@ -1,12 +1,46 @@
-{
-  "name": "meta-webhook-server",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "node src/index.js"
-  },
-  "dependencies": {
-    "express": "^4.19.0"
+const express = require("express");
+const bodyParser = require("body-parser");
+require("dotenv").config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Parse request body
+app.use(bodyParser.json());
+
+// ✅ Webhook verification (Meta calls this when you first set webhook URL)
+app.get("/webhook", (req, res) => {
+  const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+
+  // Parse params from the query string
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  // Check if a token and mode were sent
+  if (mode && token) {
+    if (mode === "subscribe" && token === VERIFY_TOKEN) {
+      console.log("✅ Webhook verified!");
+      res.status(200).send(challenge);
+    } else {
+      res.sendStatus(403);
+    }
+  } else {
+    res.sendStatus(400);
   }
-}
+});
+
+// ✅ Handling incoming messages/events
+app.post("/webhook", (req, res) => {
+  let body = req.body;
+
+  console.log("📩 Incoming webhook event:", JSON.stringify(body, null, 2));
+
+  // Always return 200 to Meta quickly
+  res.status(200).send("EVENT_RECEIVED");
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
