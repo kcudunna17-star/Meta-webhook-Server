@@ -1,25 +1,17 @@
 {
   "name": "meta-webhook-server",
   "version": "1.0.0",
-  "description": "Meta Webhook Server for Messenger / WhatsApp integrations",
+  "description": "Meta webhook server with PostgreSQL support",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/index.js"
   },
-  "keywords": [
-    "meta",
-    "webhook",
-    "messenger",
-    "whatsapp",
-    "express"
-  ],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "axios": "^1.7.7",
     "body-parser": "^1.20.3",
     "dotenv": "^16.4.5",
-    "express": "^4.21.1"
+    "express": "^4.21.1",
+    "pg": "^8.16.3"
   }
 }
