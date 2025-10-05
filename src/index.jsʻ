@@ -2,32 +2,26 @@ const express = require("express");
 const bodyParser = require("body-parser");
 require("dotenv").config();
 
-// ✅ Force Render to flush logs immediately (helps you see GET logs in dashboard)
-process.stdout.write = (function (write) {
-  return function (string, encoding, fd) {
-    write.apply(process.stdout, arguments);
-    process.stdout.emit("flush");
-  };
-})(process.stdout.write);
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Parse request body
 app.use(bodyParser.json());
 
-// ✅ Webhook verification (Meta calls this when you first set webhook URL)
+// 🧾 Log every request
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} request to ${req.url}`);
+  next();
+});
+
+// ✅ Webhook verification
 app.get("/webhook", (req, res) => {
   console.log("🟡 Incoming GET verification request:", req.query);
-
   const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-
-  // Parse params from query string
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  // Check if mode and token are present
   if (mode && token) {
     if (mode === "subscribe" && token === VERIFY_TOKEN) {
       console.log("✅ Webhook verified successfully!");
@@ -42,16 +36,13 @@ app.get("/webhook", (req, res) => {
   }
 });
 
-// ✅ Handle incoming messages/events from Meta
+// ✅ Handle incoming messages/events
 app.post("/webhook", (req, res) => {
-  const body = req.body;
-  console.log("📩 Incoming webhook event:", JSON.stringify(body, null, 2));
-
-  // Always respond quickly to Meta
+  console.log("📩 Incoming webhook event:", JSON.stringify(req.body, null, 2));
   res.status(200).send("EVENT_RECEIVED");
 });
 
 // ✅ Start server
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
