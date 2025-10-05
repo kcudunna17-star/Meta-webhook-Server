@@ -2,62 +2,53 @@ const express = require("express");
 const bodyParser = require("body-parser");
 require("dotenv").config();
 
-// ✅ Force logs to flush immediately (Render sometimes buffers console logs)
-const flushLog = (msg) => {
-  console.log(msg);
-  process.stdout.write(""); // forces flush
-};
-
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 10000; // Render auto-assigns a port
 
-// Parse request body
-app.use(bodyParser.json());
-
-// ✅ Debug helper route — test Render logs with this
-app.get("/ping", (req, res) => {
-  flushLog("🏓 Ping received at /ping endpoint!");
-  res.status(200).send("PONG");
+// ✅ Basic health check
+app.get("/", (req, res) => {
+  res.send("✅ Meta Webhook Server is live and running!");
 });
 
-// ✅ Webhook verification (Meta calls this when you first set webhook URL)
+// ✅ Ping route for testing Render logs
+app.get("/ping", (req, res) => {
+  console.log("🏓 Ping received at /ping endpoint!");
+  res.send("PONG");
+});
+
+// Parse JSON body
+app.use(bodyParser.json());
+
+// ✅ Webhook verification (for Meta)
 app.get("/webhook", (req, res) => {
-  flushLog("🟡 Incoming GET verification request:");
-  flushLog(req.query);
+  console.log("🟡 Incoming GET verification request:", req.query);
 
   const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-
-  // Parse params from query string
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  // Check if mode and token are present
   if (mode && token) {
     if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      flushLog("✅ Webhook verified successfully!");
+      console.log("✅ Webhook verified successfully!");
       res.status(200).send(challenge);
     } else {
-      flushLog("❌ Verification failed. Token mismatch or wrong mode.");
+      console.log("❌ Verification failed: token mismatch.");
       res.sendStatus(403);
     }
   } else {
-    flushLog("⚠️ Missing mode or token in query parameters.");
+    console.log("⚠️ Missing mode or token in query.");
     res.sendStatus(400);
   }
 });
 
-// ✅ Handle incoming messages/events from Meta
+// ✅ Handle webhook events
 app.post("/webhook", (req, res) => {
-  const body = req.body;
-  flushLog("📩 Incoming webhook event:");
-  flushLog(JSON.stringify(body, null, 2));
-
-  // Always respond quickly to Meta
+  console.log("📩 Incoming webhook event:", JSON.stringify(req.body, null, 2));
   res.status(200).send("EVENT_RECEIVED");
 });
 
 // ✅ Start server
 app.listen(PORT, () => {
-  flushLog(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
