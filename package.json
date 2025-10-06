@@ -1,13 +1,26 @@
 {
   "name": "meta-webhook-server",
   "version": "1.0.0",
-  "main": "src/index.js",
+  "description": "Meta webhook server for Messenger / WhatsApp integrations",
+  "type": "module",
+  "main": "index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node index.js"
   },
+  "keywords": [
+    "meta",
+    "webhook",
+    "messenger",
+    "whatsapp",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
-    "body-parser": "^1.20.2",
-    "dotenv": "^16.3.1"
+    "axios": "^1.7.7",
+    "body-parser": "^1.20.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "pg": "^8.16.3"
   }
 }
