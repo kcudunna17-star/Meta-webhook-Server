@@ -1,49 +1,72 @@
-import express from "express";
-import pkg from "pg";
+// index.js (Final Production Version)
+const express = require("express");
+const bodyParser = require("body-parser");
+const dotenv = require("dotenv");
+const { Pool } = require("pg");
 
-const { Pool } = pkg;
+dotenv.config();
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
-// ✅ PostgreSQL connection pool
+// ✅ Middleware
+app.use(bodyParser.json());
+
+// ✅ PostgreSQL Database connection
 const pool = new Pool({
-  user: "kc",             // your db username
-  host: "localhost",      // since it's running on Termux
-  database: "postgres",   // default db name
-  password: "65116028",   // the password you gave "kc"
-  port: 5432,             // default PostgreSQL port
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
 });
 
-// Test route: fetch users
-app.get("/users", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM test_users");
-    res.json(result.rows);
-  } catch (err) {
-    console.error("❌ Database error:", err);
-    res.status(500).send("Server error");
-  }
-});
-
-// ✅ Keep your webhook routes here
+// ✅ Webhook verification route (Meta)
 app.get("/webhook", (req, res) => {
+  const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
-  const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "default_token";
 
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    res.status(200).send(challenge);
-  } else {
-    res.sendStatus(403);
+  if (mode && token) {
+    if (mode === "subscribe" && token === VERIFY_TOKEN) {
+      console.log("WEBHOOK_VERIFIED");
+      res.status(200).send(challenge);
+    } else {
+      res.sendStatus(403);
+    }
   }
 });
 
+// ✅ Webhook message receiver
 app.post("/webhook", (req, res) => {
-  console.log("📩 Incoming webhook event:", req.body);
-  res.sendStatus(200);
+  const body = req.body;
+  console.log("Webhook received:", JSON.stringify(body, null, 2));
+
+  if (body.object === "page") {
+    body.entry.forEach((entry) => {
+      const webhookEvent = entry.messaging[0];
+      console.log("Message event:", webhookEvent);
+    });
+    res.status(200).send("EVENT_RECEIVED");
+  } else {
+    res.sendStatus(404);
+  }
 });
 
-// ✅ Render/Termux dynamic port
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// ✅ Test route for deployment verification
+app.get("/users", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM users");
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ✅ Root route
+app.get("/", (req, res) => {
+  res.send("🚀 Meta Webhook Server Live & Running on Render!");
+});
+
+// ✅ Start the server
+app.listen(PORT, () => {
+  console.log(`✅ Server is live on port ${PORT}`);
+});
